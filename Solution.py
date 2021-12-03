@@ -310,4 +310,3 @@ if __name__ == '__main__':
     solution.feasible()
     solution.Obj()
     agent = Agent([], solution.Ni, solution.Ne)
-    pass
