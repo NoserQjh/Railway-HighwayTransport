@@ -26,12 +26,12 @@ class Solution:
         # Cir 选择路线r时，中标运输订单i的单位运输成本
         self.Cir = info['Cir']
         # dir 选择路线r时，中标运输订单i的单位运输距离
-        self.dkjir = info['dkjir']
+        self.dir = info['dir']
         # vir 选择路线r时，中标运输订单i的单位运输速度
         self.vir = info['vir']
 
         # dji 从既有运输订单j的终点到运输订单i的起点的空车行驶距离
-        self.d0kji = info['d0kji']
+        self.dji = info['dji']
 
         # tdkj  运输订单j的卡车k到达终点的时刻
         self.tdkj = info['tdkj']
@@ -67,15 +67,15 @@ class Solution:
         self.ni = info['ni']
 
         # tlckji 在客户处装货或卸货的时间
-        self.tlckji = info['tlckji']
+        self.tlci = info['tlci']
 
         # TODO tskji 在铁路场站的免费堆存时间
         # self.tskjir = info['tskjir']
 
         # Qei 运输订单i所到的铁路场站的其他货物重量
-        self.Qei = info['Qei']
+        self.Qoi = info['Qoi']
         # Qri 运输订单i所到的铁路场站的运能
-        self.Qri = info['Qri']
+        self.Qi = info['Qi']
         # qi 运输订单i所到的铁路场站的列车运力
         self.qi = info['qi']
 
@@ -86,13 +86,13 @@ class Solution:
         self.Cer = info['Cer']
 
         # dkjer 选择路线r时，中标运输订单e的单位运输距离
-        self.dkjer = info['dkjer']
+        self.der = info['der']
 
         # ver 选择路线r时，中标运输订单e的单位运输速度
         self.ver = info['ver']
 
         # d0kje 从既有运输订单j的终点到运输订单e的起点的空车行驶距离
-        self.d0kje = info['d0kje']
+        self.dje = info['dje']
 
         # Ne 中标运输订单e的集装箱
         self.Ne = info['Ne']
@@ -116,8 +116,15 @@ class Solution:
         self.be = info['be']
 
         # tlrkje 在客户处装货或卸货的时间
-        self.tlrkje = info['tlrkje']
+        self.tlre = info['tlre']
 
+        self.x1 = info['x1']
+        self.x2 = info['x2']
+        self.x3 = info['x3']
+        self.x4 = info['x4']
+
+        self.min_te = (self.x1+self.x2)/2
+        self.max_te = (self.x3+self.x4)/2
         # xkjir 卡车K从既有运输订单j的终点运往中标运输订单i的起点且选择线路r运输集装箱
         self.xkjir = np.zeros(
             [len(self.K), len(self.J), len(self.I), len(self.R)])
@@ -128,22 +135,22 @@ class Solution:
 
         # 提前算出
         # 路途运输时间
-        self.tkjir = self.dkjir/self.vir
+        self.tir = self.dir/self.vir
 
         # 空车定位时间
-        self.tkji = self.d0kji/self.v0
+        self.tji = self.dji/self.v0
 
         # 路途运输时间
-        self.tkjer = self.dkjer/self.ver
+        self.ter = self.der/self.ver
 
         # 空车定位时间
-        self.tkje = self.d0kje/self.v0
+        self.tje = self.dje/self.v0
 
     def update(self):
 
         # 既有运输订单j的卡车到达中标运输订单i的货主处的时刻为：该卡车完成上一批运输订单的时刻 + 空车定位时间
         self.tckji = (np.expand_dims(self.tdkj, axis=2).repeat(
-            len(self.I), axis=2)+self.tkji)*np.sum(self.xkjir, axis=3)
+            len(self.I), axis=2)+self.tji)*np.sum(self.xkjir, axis=3)
 
         self.Zi = np.max(np.max(self.tckji, 0), 0)
 
@@ -151,29 +158,28 @@ class Solution:
         self.fi = relu(self.Zi-self.ni)*self.Ni*self.f
 
         # 卡车到达铁路场站的时刻为：卡车到达货主处的最晚时刻 + 货物装车时间 + 运输时间
-        self.tmkji = np.sum(self.xkjir*(np.expand_dims(
-            self.tlckji+self.Zi, axis=3).repeat(len(self.R), axis=3)+self.tkjir), 3)
+        self.tmi = np.sum(np.sum(np.sum(self.xkjir, 0), 0)/(np.expand_dims((self.Ni), 1).repeat(
+            len(self.R), 1))*(np.expand_dims((self.tlci+self.Zi), 1).repeat(len(self.R), 1)+self.tir), 1)
 
-        self.use_cln = self.Ni < ((self.Qri-self.Qei)/self.qi)
+        self.use_cln = self.Ni < ((self.Qi-self.Qoi)/self.qi)
 
-        self.Dkjir_temp_0 = (self.tmkji < np.expand_dims(
-            np.expand_dims(self.clni, 0).repeat(len(self.J), 0), 0).repeat(len(self.K), 0)) & self.use_cln
-        self.Dkjir_temp_1 = ((1 - self.Dkjir_temp_0) * (self.tmkji < np.expand_dims(
-            np.expand_dims(self.cuni, 0).repeat(len(self.J), 0), 0).repeat(len(self.K), 0))) & self.use_cln
-        self.Dkjir_temp_2 = (self.tmkji >= np.expand_dims(
-            np.expand_dims(self.cuni, 0).repeat(len(self.J), 0), 0).repeat(len(self.K), 0)) | (1 - self.use_cln)
+        self.Dkjir_temp_0 = (self.tmi < self.clni) & self.use_cln
+
+        self.Dkjir_temp_1 = ((1 - self.Dkjir_temp_0) *
+                             (self.tmi < self.cuni)) & self.use_cln
+        self.Dkjir_temp_2 = (self.tmi >= self.cuni) | (1 - self.use_cln)
 
         self.Dkjir = self.Dkjir_temp_0 * \
-            relu(self.clni-self.tmkji-self.ts) * \
+            relu(self.clni-self.tmi-self.ts) * \
             np.sum(self.xkjir, 3)*self.st + \
             self.Dkjir_temp_2 * \
-            relu(self.cln2i-self.tmkji-self.ts) * \
+            relu(self.cln2i-self.tmi-self.ts) * \
             np.sum(self.xkjir, 3)*self.st
 
         # 铁路
 
         # 既有运输订单j的卡车到达中标运输订单i的货主处的时刻为：该卡车完成上一批运输订单的时刻 + 空车定位时间
-        self.tmkje = np.sum(self.xkjer, 3)*(self.tkje +
+        self.tmkje = np.sum(self.xkjer, 3)*(self.tje +
                                             np.expand_dims(self.tdkj, 2).repeat(len(self.E), 2))
 
         self.Ze = np.max(np.max(self.tmkje, 0), 0)
@@ -187,19 +193,19 @@ class Solution:
 
         self.tekjer_temp_1 = self.Ze > self.be
 
-        self.tekjer = self.tekjer_temp_0 *\
-            (self.Te+self.tlrkje+np.sum(self.tkjer, 3)) * \
+        self.tekje = self.tekjer_temp_0 *\
+            (self.Te+self.tlre+np.sum(self.ter, 1)) * \
             np.sum(self.xkjer, 3) +\
             self.tekjer_temp_1 *\
-            (self.Ze+self.tlrkje+np.sum(self.tkjer, 3)) * \
+            (self.Ze+self.tlre+np.sum(self.ter, 1)) * \
             np.sum(self.xkjer, 3)
 
-        self.fkjer = (self.tekjer-self.be)*self.f*np.sum(self.xkjer, 3)
+        self.fkjer = relu(self.tekje-self.be)*self.f*np.sum(self.xkjer, 3)
 
         self.ta_i = (np.expand_dims(np.expand_dims(self.ni, axis=0).repeat(len(self.K), axis=0), axis=1).repeat(
-            len(self.J), axis=1)-np.expand_dims(self.tdkj, axis=2).repeat(len(self.I), axis=2))
+            len(self.J), axis=1)-np.expand_dims(self.tdkj, axis=2).repeat(len(self.I), axis=2))*self.ta
         self.ta_e = (np.expand_dims(np.expand_dims(self.qe, axis=0).repeat(len(self.K), axis=0), axis=1).repeat(
-            len(self.J), axis=1)-np.expand_dims(self.tdkj, axis=2).repeat(len(self.I), axis=2))
+            len(self.J), axis=1)-np.expand_dims(self.tdkj, axis=2).repeat(len(self.I), axis=2))*self.ta
 
         pass
 
@@ -219,12 +225,12 @@ class Solution:
         benefit_e = np.sum(self.bea*self.dve*self.Ne)
 
         # 运输成本
-        cost_transfer_i = np.sum(self.xkjir*self.Cir*self.dkjir)
-        cost_transfer_e = np.sum(self.xkjer*self.Cer*self.dkjer)
+        cost_transfer_i = np.sum(self.xkjir*self.Cir*self.dir)
+        cost_transfer_e = np.sum(self.xkjer*self.Cer*self.der)
 
         # 空车定位成本
-        cost_position_i = np.sum(np.sum(self.xkjir, axis=3)*self.d0kji*self.C0)
-        cost_position_e = np.sum(np.sum(self.xkjer, axis=3)*self.d0kje*self.C0)
+        cost_position_i = np.sum(np.sum(self.xkjir, axis=3)*self.dji*self.C0)
+        cost_position_e = np.sum(np.sum(self.xkjer, axis=3)*self.dje*self.C0)
 
         # 仓储成本
         cost_storage_i = np.sum(self.Dkjir)
@@ -279,13 +285,8 @@ class Solution:
         self.ta = 2
 
         # h 时间满意度的约束值
-        self.h = 0.8
-
+        h = 0.5
         # 客户的容忍时间节点
-        self.x1 = 20
-        self.x2 = 20.8
-        self.x3 = 21
-        self.x4 = 23
 
 
 class Agent:
@@ -305,8 +306,36 @@ class Agent:
 if __name__ == '__main__':
 
     random.seed(1)
-    solution = Solution(rw.readDat('./Data/moxing2-1124.dat'))
-    solution.update()
-    solution.feasible()
-    solution.Obj()
+    solution = Solution(rw.readDat('./Data/moxing2-1205.dat'))
+
+    xkjir_list = [[1, 4, 1, 3], [2, 4, 1, 3], [5, 4, 1, 3],
+                  [2, 5, 2, 3], [3, 5, 2, 3], [5, 5, 2, 3]]
+    xkjir = []
+    for k, j, i, r in xkjir_list:
+        k = solution.K.index(k)
+        j = solution.J.index(j)
+        i = solution.I.index(i)
+        r = solution.R.index(r)
+        xkjir.append([k, j, i, r])
+        solution.xkjir[k, j, i, r] = 1
+
+    xkjer_list = [[4, 4, 1, 3], [4, 5, 1, 3], [1, 3, 1, 3],
+                  [1, 5, 2, 1], [3, 3, 2, 1], [3, 4, 2, 1], ]
+    [[1, 4, 1, 3], [2, 4, 1, 3], [3, 4, 1, 3], [
+        4, 4, 2, 3], [5, 4, 2, 3], [1, 5, 2, 3]]
+
+    xkjer = []
+    for k, j, i, r in xkjer_list:
+        k = solution.K.index(k)
+        j = solution.J.index(j)
+        i = solution.E.index(i)
+        r = solution.R.index(r)
+        xkjer.append([k, j, i, r])
+        solution.xkjer[k, j, i, r] = 1
+
+    feas, val = solution.value()
     agent = Agent([], solution.Ni, solution.Ne)
+
+'''
+34564
+'''

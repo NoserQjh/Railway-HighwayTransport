@@ -4,3 +4,5 @@
 *.pyc
 *.yml
 *.dat
+*.tmp
+*.~vsdx

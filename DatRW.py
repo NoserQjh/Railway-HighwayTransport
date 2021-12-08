@@ -52,14 +52,19 @@ def readDat(filename):
                     l.append(float(i))
             pass
 
-            if item[0][1] in ['dvi', 'Ni', 'mi', 'ni', 'bia', 'clni', 'cln2i', 'cuni', 'Qei', 'Qri', 'qi']:
+            if item[0][1] in ['dvi', 'Ni', 'mi', 'ni', 'bia', 'clni', 'cln2i', 'cuni', 'Qoi', 'Qi', 'qi', 'tlci']:
                 l = np.array(l)
                 l.resize(I, 2)
                 result[item[0][1]] = l[:, 1]
 
-            elif item[0][1] in ['Cir', 'vir']:
+            elif item[0][1] in ['Cir', 'vir', 'dir']:
                 l = np.array(l)
                 l.resize(I, R+1)
+                result[item[0][1]] = l[:, 1:]
+
+            elif item[0][1] in ['dji']:
+                l = np.array(l)
+                l.resize(J, I+1)
                 result[item[0][1]] = l[:, 1:]
 
             elif item[0][1] in ['tdkj', 'Nkj']:
@@ -67,55 +72,20 @@ def readDat(filename):
                 l.resize(K, J+1)
                 result[item[0][1]] = l[:, 1:]
 
-            elif item[0][1] in ['dkjir']:
-                l = np.array(l)
-                d = np.zeros([K, J, I, R])
-
-                l.resize(K*J*I*R, 5)
-                for i in range(l.shape[0]):
-                    d[result['K'].index(l[i, 0]), result['J'].index(l[i, 1]), result['I'].index(
-                        l[i, 2]), result['R'].index(l[i, 3])] = l[i, 4]
-                result[item[0][1]] = d
-
-            elif item[0][1] in ['d0kji', 'tlckji']:
-                l = np.array(l)
-                d = np.zeros([K, J, I])
-
-                l.resize(K*J*I, 4)
-                for i in range(l.shape[0]):
-                    d[result['K'].index(l[i, 0]), result['J'].index(l[i, 1]), result['I'].index(
-                        l[i, 2])] = l[i, 3]
-                result[item[0][1]] = d
-
-            elif item[0][1] in ['dve', 'Ne', 'bea', 'pe', 'qe', 'ae', 'be', 'Te']:
+            elif item[0][1] in ['dve', 'Ne', 'bea', 'pe', 'qe', 'ae', 'be', 'Te', 'tlre', 'x1', 'x2', 'x3', 'x4']:
                 l = np.array(l)
                 l.resize(I, 2)
                 result[item[0][1]] = l[:, 1]
 
-            elif item[0][1] in ['Cer', 'ver']:
+            elif item[0][1] in ['Cer', 'ver', 'der']:
                 l = np.array(l)
                 l.resize(I, R+1)
                 result[item[0][1]] = l[:, 1:]
 
-            elif item[0][1] in ['dkjer']:
+            elif item[0][1] in ['dje']:
                 l = np.array(l)
-                d = np.zeros([K, J, I, R])
-
-                l.resize(K*J*I*R, 5)
-                for i in range(l.shape[0]):
-                    d[result['K'].index(l[i, 0]), result['J'].index(l[i, 1]), result['I'].index(
-                        l[i, 2]), result['R'].index(l[i, 3])] = l[i, 4]
-                result[item[0][1]] = d
-
-            elif item[0][1] in ['d0kje', 'tlrkje']:
-                l = np.array(l)
-                d = np.zeros([K, J, I])
-
-                l.resize(K*J*I, 4)
-                for i in range(l.shape[0]):
-                    d[result['K'].index(l[i, 0]), result['J'].index(l[i, 1]), result['I'].index(
-                        l[i, 2])] = l[i, 3]
-                result[item[0][1]] = d
+                l.resize(J, E+1)
+                result[item[0][1]] = l[:, 1:]
 
             else:
                 print(item[0][1])
@@ -123,5 +93,20 @@ def readDat(filename):
 
 
 if __name__ == '__main__':
-    x = readDat('./Data/moxing2-1124.dat')
+    x = readDat('./Data/moxing2-1205.dat')
     x
+
+'''
+dir
+dji
+tlci
+Qoi
+Qi
+der
+dje
+tlre
+x1
+x2
+x3
+x4
+'''
